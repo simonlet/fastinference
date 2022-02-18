@@ -47,6 +47,7 @@ def model_to_json(model, out_path, file_name = "model"):
             d["weight"] = w
             d["file"] = os.path.join(out_path, "{}_base_{}.json".format(model.name,i))
             models.append(d)
+            m.name = "{}_base_{}".format(model.name,i)
             model_to_json(m, out_path, "{}_base_{}".format(model.name,i))
         data["models"] = models
     else:
