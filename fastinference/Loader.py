@@ -102,13 +102,18 @@ def model_from_xgb_file(file_path):
                 fi_model_dict["classes"] = list(range(num_classes))
                 fi_model_dict["n_features"] = int(data["learner"]["learner_model_param"]["num_feature"])
                 fi_model_dict["name"] = Path(file_path).stem
-                # base_score is the "global bias" that needs to be added to the leaf predictions
-                base_score = float(data["learner"]["learner_model_param"]["base_score"])
 
                 # add trees to key "models"
                 fi_model_dict["models"] = []
                 
                 xgb_trees = data["learner"]["gradient_booster"]["model"]["trees"]
+
+                # base_score is the "global bias" that needs to be added to the leaf predictions
+                base_score = float(data["learner"]["learner_model_param"]["base_score"])
+                ### TODO: how exactly should the base_score be added to the tree predictions?
+                # use equal weighting across trees
+                tree_weight = 1 / len(xgb_trees)
+
                 for xgb_tree in xgb_trees:
 
                     left_children = xgb_tree["left_children"]
@@ -158,7 +163,7 @@ def model_from_xgb_file(file_path):
 
                     # create dict of weight and tree dictionary
                     tree_weight_dict = dict()
-                    tree_weight_dict["weight"] = 1 / len(xgb_trees)
+                    tree_weight_dict["weight"] = tree_weight
                     tree_weight_dict["model"] = tree_dict
 
                     fi_model_dict["models"].append(tree_weight_dict)
