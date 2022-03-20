@@ -143,7 +143,7 @@ def get_nodes(model):
             to_expand.append( (cid, False, n.rightChild) )
     return inner_nodes, leaf_nodes
 
-def to_implementation(model, out_path, out_name, weight = 1, namespace = "FAST_INFERENCE", feature_type = "double", label_type = "double", int_type = "unsigned int", output_debug = False, infer_types = True, reorder_nodes = False, set_size = 8, force_cacheline = False, **kwargs):
+def to_implementation(model, out_path, out_name, weight = 1, namespace = "FAST_INFERENCE", feature_type = "double", label_type = "double", feature_index_type = "unsigned int", nodes_index_type = "unsigned int", output_debug = False, infer_types = True, reorder_nodes = False, set_size = 8, force_cacheline = False, **kwargs):
     """Generates a native C++ implementation of the given Tree model. Native means that the tree is represented in an array structure which is iterated via a while-loop. You can use this implementation by simply passing :code:`"cpp.native"` to the implement, e.g.
 
     .. code-block:: python
@@ -183,14 +183,24 @@ def to_implementation(model, out_path, out_name, weight = 1, namespace = "FAST_I
         inner_nodes, leaf_nodes = get_nodes(model)
     
     if infer_types:
+        # infer smallest data type for indeces of nodes array
         if len(inner_nodes) < 2**8:
-            int_type = "unsigned char"
+            nodes_index_type = "unsigned char"
         elif len(inner_nodes) < 2**16:
-            int_type = "unsigned short"
+            nodes_index_type = "unsigned short"
         elif len(inner_nodes) < 2**32:
-            int_type = "unsigned int"
+            nodes_index_type = "unsigned int"
         else:
-            int_type = "unsigned long"
+            nodes_index_type = "unsigned long"
+        # infer smallest data type for feature id
+        if model.n_features < 2**8:
+            feature_index_type = "unsigned char"
+        elif model.n_features < 2**16:
+            feature_index_type = "unsigned short"
+        elif model.n_features < 2**32:
+            feature_index_type = "unsigned int"
+        else:
+            feature_index_type = "unsigned long"
 
         # It might be interstring to use a different split_type for splits, but this can get weird if split_type != feautre_type
         # So lets leave this code here for now and see what happens
@@ -236,7 +246,8 @@ def to_implementation(model, out_path, out_name, weight = 1, namespace = "FAST_I
         label_type = label_type,
         code_static = "",
         weight = weight,
-        int_type = int_type,
+        feature_index_type = feature_index_type,
+        nodes_index_type = nodes_index_type,
         leaf_nodes = leaf_nodes,
         inner_nodes = inner_nodes,
     )
@@ -248,7 +259,7 @@ def to_implementation(model, out_path, out_name, weight = 1, namespace = "FAST_I
         namespace = namespace,
         label_type = label_type,
         model_weight = weight,
-        int_type = int_type,
+        nodes_index_type = nodes_index_type,
         leaf_nodes = leaf_nodes,
         inner_nodes = inner_nodes,
     )
